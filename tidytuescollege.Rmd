@@ -1,28 +1,39 @@
 ---
-title: "tidytuescolleges"
+title: "US College Tuition"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggforce)
+library(RColorBrewer)
+library(sinaplot)
 ```
 
-## R Markdown
+## Tidy Tuesday 3/10/2020
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r cars}
-summary(cars)
+tuition_cost <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-10/tuition_cost.csv') #read in dataset
 ```
 
-## Including Plots
+## Plot
 
-You can also embed plots, for example:
+```{r pressure, fig.height=4, fig.width=6}
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+tuition_cost%>%
+  filter(type %in% c("Private", "Public", "For Profit"))%>% #remove observations with type other than Private, Public, or For Profit
+  ggplot(aes(y=in_state_tuition, x=type))+
+  geom_sina(aes(color=type))+
+  scale_color_brewer(palette = "Dark2", name="School Type")+ 
+  theme_minimal()+
+  labs(title = "In-State Tuition of US Colleges", subtitle = "2018-2019 School Year", caption = "Data from The Chronicle of Higher Education", y="In-State Tuition (USD)", x= "School Type")+
+  theme(axis.title.x = element_blank(), text = element_text(size=14))->march10tt
+
+march10tt
+
+ggsave("march10tt.png", plot = march10tt)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+While making this tidy tuesday submission I was reminded that one should always be sure they are using the appropriate package for some task (in this case I had initially downloaded the package sinaplot by mistake, which requires plyr and is not tied to ggplot2). I also learned how to omit the axis title from a ggplot using the element_blank() function, and tried to apply certain lessons from Claus Wilke's data viz book (for example, by increasing the text size).
