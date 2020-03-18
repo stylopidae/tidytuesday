@@ -8,19 +8,18 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ggforce)
 library(RColorBrewer)
-library(sinaplot)
 ```
 
 ## Tidy Tuesday 3/10/2020
 
 
-```{r cars}
+```{r}
 tuition_cost <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-10/tuition_cost.csv') #read in dataset
 ```
 
 ## Plot
 
-```{r pressure, fig.height=4, fig.width=6}
+```{r, fig.height=4, fig.width=6}
 
 tuition_cost%>%
   filter(type %in% c("Private", "Public", "For Profit"))%>% #remove observations with type other than Private, Public, or For Profit
