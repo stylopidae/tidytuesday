@@ -5,6 +5,10 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(schrute)
+library(tidytext)
+library(tidylog)
 ```
 
 ## R Markdown
@@ -14,15 +18,50 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r cars}
-summary(cars)
+officedata <- schrute::theoffice
+#read in data
+male_mainchar<-c("Michael","Ryan","Jim","Andy", "Oscar", "Toby", "Stanley", "Dwight", "Kevin", "Darryl")
+#variable contains list of the ten main characters that are male
+female_mainchar<-c("Kelly", "Jan", "Pam", "Erin", "Oscar", "Angela", "Phyllis")
+#variable contains list of the seven main characters that are female
+officedata%>%
+  unnest_tokens(word, text)%>%
+  #reformat data such that each row contains only one token (word)
+  mutate(gender = case_when(str_detect(character, paste(male_mainchar, collapse = "|"))~"male", 
+                            str_detect(character, paste(female_mainchar, collapse = "|"))~"female"))%>%
+  #create new variable with value "male" if any male main character is detected in the observation and value "female" if any female main character is detected in the observation
+  select(season, gender)%>%
+  #remove all variables but season and gender
+  table()%>%
+  #create table which counts number of "male" and "female" observations (words) in each season
+  as_tibble()%>%
+  #convert table to tibble for dplyr manipulation
+    pivot_wider(names_from = gender, values_from = n)%>%
+  #create columns male and female
+    mutate(wpmchar_f = female*(1/7),
+           #create variable words per main character female
+           wpmchar_m = male*(1/10),
+           #create variable words per main character male
+           ratio = wpmchar_f/wpmchar_m,
+           #create variable ratio of female to male words per main character
+           season_display = substr(season, start = 2, stop = 2))->wrangled #extract second value from season strings for display-ready format
 ```
 
 ## Including Plots
 
 You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r pressure}
+  ggplot(wrangled, aes(x = season_display, y = ratio, group = 1))+
+    geom_line()+labs(y="Word Ratio")+
+    theme_classic()+
+    labs(title = "Gender Equity in The Office (US)", 
+           subtitle = "female to male words per main character by season", 
+           caption = "Data from Schrute", 
+           y="Ratio", 
+           x= "Season")+
+  theme(text = element_text(size=14))
+    
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
