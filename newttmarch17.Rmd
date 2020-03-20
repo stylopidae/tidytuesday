@@ -9,6 +9,7 @@ library(tidyverse)
 library(schrute)
 library(tidytext)
 library(tidylog)
+library(ggthemes)
 ```
 
 ## R Markdown
@@ -51,17 +52,18 @@ officedata%>%
 
 You can also embed plots, for example:
 
-```{r pressure}
+```{r pressure, fig.height=4, fig.width=6}
   ggplot(wrangled, aes(x = season_display, y = ratio, group = 1))+
     geom_line()+labs(y="Word Ratio")+
-    theme_classic()+
+    theme_minimal()+
     labs(title = "Gender Equity in The Office (US)", 
            subtitle = "female to male words per main character by season", 
            caption = "Data from Schrute", 
            y="Ratio", 
            x= "Season")+
-  theme(text = element_text(size=14))
-    
+  theme(text = element_text(size=14))->textplot
+  textplot
+  ggsave()
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
