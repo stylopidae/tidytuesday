@@ -9,15 +9,13 @@ library(tidyverse)
 library(schrute)
 library(tidytext)
 library(tidylog)
+library(ggridges)
+library(viridis)
 ```
 
-## R Markdown
+## Wrangle
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
+```{r}
 officedata <- schrute::theoffice
 #read in data
 male_mainchar<-c("Michael","Ryan","Jim","Andy", "Oscar", "Toby", "Stanley", "Dwight", "Kevin", "Darryl")
@@ -30,39 +28,34 @@ officedata%>%
   mutate(gender = case_when(str_detect(character, paste(male_mainchar, collapse = "|"))~"male", 
                             str_detect(character, paste(female_mainchar, collapse = "|"))~"female"))%>%
   #create new variable with value "male" if any male main character is detected in the observation and value "female" if any female main character is detected in the observation
-  select(season, gender)%>%
-  #remove all variables but season and gender
-  table()%>%
-  #create table which counts number of "male" and "female" observations (words) in each season
-  as_tibble()%>%
-  #convert table to tibble for dplyr manipulation
-    pivot_wider(names_from = gender, values_from = n)%>%
+  count(season, episode, gender)%>%
+  #get table counts
+  pivot_wider(names_from = gender, values_from = n)%>%
   #create columns male and female
-    mutate(wpmchar_f = female*(1/7),
+  mutate(wpmchar_f = female*(1/length(female_mainchar)),
            #create variable words per main character female
-           wpmchar_m = male*(1/10),
+           wpmchar_m = male*(1/length(male_mainchar)),
            #create variable words per main character male
            ratio = wpmchar_f/wpmchar_m,
            #create variable ratio of female to male words per main character
-           season_display = substr(season, start = 2, stop = 2))->wrangled #extract second value from season strings for display-ready format
+           season_display = substr(season, start = 2, stop = 2))->wrangled2 #extract second value from season strings for display-ready format
+wrangled2
 ```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, fig.height=4, fig.width=6}
-  ggplot(wrangled, aes(x = season_display, y = ratio, group = 1))+
-    geom_line()+labs(y="Word Ratio")+
+## Plot
+```{r, fig.height = 4, fig.width = 6}
+  ggplot(wrangled2, aes(x = ratio, y = season_display, fill = stat(x)))+
+    geom_density_ridges_gradient()+
     theme_minimal()+
-    labs(title = "Gender Equity in The Office (US)", 
+    labs(title = "Gender Inequity in The Office (US)", 
            subtitle = "female to male words per main character by season", 
            caption = "Data from Schrute", 
-           y="Ratio", 
-           x= "Season")+
-  theme(text = element_text(size=14))->textplot
-  textplot
-  ggsave(filename = "gender_equity.png", plot = textplot)
+           y="Season", 
+           x= "F:M Ratio (words/main character)")+
+  theme(text = element_text(size=14))+
+  scale_fill_viridis(option = "viridis", name = "F:M Ratio")->textplot2
+  textplot2
+  ggsave(filename = "gender_equity2.png", plot = textplot2)
+  
 ```
+In creating this #tidytuesday submission, I learned that there are frequently multiple ways to accomplish the same goal when wrangling data. For instance, I initially used the function table() to count the instances of the values of gender in each season, and the function as_tibble() to convert that output back into a tibble. However, as Dr. Spielman pointed out, I could just as easily have used the construction count(gender, season). Later, when I realized I wanted to create a ridge plot rather than a line plot, I used the count() function to count combinations of episode, season and gender. According to the documentation for this function, count() is equivalent to calling group_by(), tally(), and ungroup(); it also has the advantage of speed over table() if one is summarizing multiple variables because it does not record combinations which occur 0 times. 
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
